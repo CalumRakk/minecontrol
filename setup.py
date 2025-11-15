@@ -19,7 +19,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/CalumRakk/minecontrol",
-    packages=["minecontrol", "minecontrol.discord"],
+    packages=["minecontrol", "minecontrol.discord_bot"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
