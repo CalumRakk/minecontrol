@@ -172,8 +172,9 @@ async def setup_bot_role(
     roles: Sequence[discord.Role] = getattr(interaction.guild, "roles", [])
     existing_role = discord.utils.get(roles, name=rolename)
     if existing_role:
+        config_manager.set_admin_role(interaction.guild.id, rolename)  # type: ignore
         await interaction.followup.send(
-            f"El rol '{rolename}' ya existe. ¡Todo listo!", ephemeral=True
+            f"El rol '{rolename}' ya existe y ha sido configurado como el rol de administrador. ¡Todo listo!", ephemeral=True
         )
         return
 

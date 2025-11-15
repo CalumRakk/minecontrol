@@ -4,6 +4,7 @@ docs/
 .vscode/
 .venv/
 .env/
+logs/
 
 # Extensiones
 
