@@ -8,7 +8,7 @@ from discord.app_commands import AppCommandError, CheckFailure
 from discord.ext import commands
 
 from minecontrol.config import ManagerConfig
-from minecontrol.discord.guild_config import GuildConfigManager
+from minecontrol.discord_bot.guild_config import GuildConfigManager
 
 from .commands import (
     check_server_status,

@@ -5,7 +5,7 @@ from typing import Sequence, cast
 import discord
 
 from minecontrol.config import MinecraftConfig
-from minecontrol.discord.enums import ServerStatus
+from minecontrol.discord_bot.enums import ServerStatus
 
 from ..rcon_client import RCONAuthError, RCONConnectionError, SimpleRCONClient
 from .guild_config import GuildConfigManager

@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Union
 
 from minecontrol.config import load_config_orchestator
-from minecontrol.discord.client import init_discord_client
-from minecontrol.discord.handlers import register_handlers_discord
+from minecontrol.discord_bot.client import init_discord_client
+from minecontrol.discord_bot.handlers import register_handlers_discord
 
 
 async def main(path: Union[Path, str]):
