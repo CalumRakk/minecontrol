@@ -6,18 +6,6 @@ from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings
 
 
-class DuckDNSConfig(BaseSettings):
-    """Configuración específica para DuckDNS."""
-
-    duckdns_domain: str = Field(..., description="Dominio de DuckDNS")
-    duckdns_token: str = Field(..., description="Token de DuckDNS")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
-
-
 class DiscordConfig(BaseSettings):
     """Configuración específica para Discord."""
 
@@ -62,11 +50,9 @@ class MinecraftConfig(BaseSettings):
 class ManagerConfig:
     def __init__(
         self,
-        duckdns_config: DuckDNSConfig,
         discord_config: DiscordConfig,
         minecraft_config: MinecraftConfig,
     ) -> None:
-        self.duckdns_config = duckdns_config
         self.discord_config = discord_config
         self.minecraft_config = minecraft_config
 
@@ -78,11 +64,9 @@ def load_config_orchestator(env_path: Union[Path, str] = ".env") -> ManagerConfi
         raise FileNotFoundError(f"El archivo de configuración {env_file} no existe.")
 
     try:
-        duckdns_config = DuckDNSConfig(_env_file=env_file)  # type: ignore
         discord_config = DiscordConfig(_env_file=env_file)  # type: ignore
         minecraft_config = MinecraftConfig(_env_file=env_file)  # type: ignore
         return ManagerConfig(
-            duckdns_config=duckdns_config,
             discord_config=discord_config,
             minecraft_config=minecraft_config,
         )
