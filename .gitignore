@@ -1,0 +1,13 @@
+# Carpetas
+__pycache__/
+docs/
+.vscode/
+.venv/
+.env/
+
+# Extensiones
+
+*.egg-info
+*.json
+*.txt
+*.env
