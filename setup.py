@@ -12,14 +12,14 @@ install_requires = [
 
 setuptools.setup(
     name="minecontrol",
-    version="0.0.1",
+    version="0.0.2",
     author="Leo",
     author_email="leocasti2@gmail.com",
     description="Un bot de Discord para iniciar, detener y monitorear un servidor de Minecraft.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/CalumRakk/minecontrol",
-    packages=setuptools.find_packages(),
+    packages=["minecontrol", "minecontrol.discord"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
