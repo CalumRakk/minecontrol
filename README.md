@@ -2,7 +2,9 @@
 
     ⚠️ AVISO: Proyecto en Fase Inicial ⚠️
     
-    MineControl se encuentra en sus primeras etapas de desarrollo. Aunque es un proyecto seguro, es posible que hayan funcionalidades incompletas, errores menores o comportamientos inesperados.
+    MineControl se encuentra en sus primeras etapas de desarrollo. 
+    Aunque es un proyecto seguro, es posible que hayan funcionalidades incompletas, 
+    errores menores o comportamientos inesperados.
 
 
 # MineControl
