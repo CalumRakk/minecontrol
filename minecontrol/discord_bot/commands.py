@@ -33,9 +33,6 @@ async def get_minecraft_server_status(config: MinecraftConfig) -> ServerStatus:
             config.rcon_host, config.rcon_port, config.rcon_password
         ) as client:
             await client.execute("list")
-
-        # Si RCON funciona, el servidor está online
-        state_manager.set_stopped()
         return ServerStatus.ONLINE
 
     except (RCONConnectionError, RCONAuthError):
@@ -279,8 +276,7 @@ async def stop_minecraft_server(
                 "C-m",  # Enviamos el comando 'stop' y luego la tecla Enter (C-m)
             ]
         )
-        state_manager.set_stopped()
-        
+       
         bot = cast(commands.Bot, interaction.client)
         bot.loop.create_task(
             check_and_announce_shutdown(bot, config, guild_id, config_manager)
