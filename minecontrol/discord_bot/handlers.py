@@ -110,7 +110,9 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @app_commands.check(is_admin)
     @log_command
     async def server_start(interaction: discord.Interaction):
-        await start_minecraft_server(interaction, config.minecraft_config)
+        await start_minecraft_server(
+            interaction, config.minecraft_config, config_manager
+        )
 
     @server_start.error
     async def server_start_error(
