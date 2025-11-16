@@ -74,6 +74,29 @@ cd "$(dirname "$0")"
 > ```
 
 
+## Guía de Invitación del Bot
+
+Antes de configurar los archivos, es crucial invitar al bot a tu servidor de Discord con los permisos correctos. Un enlace mal generado puede causar que los comandos no aparezcan o que ciertas funciones fallen.
+
+Sigue estos pasos en el [Portal de Desarrolladores de Discord](https://discord.com/developers/applications) después de crear tu aplicación:
+
+1.  Selecciona tu aplicación y ve a la pestaña **"OAuth2"** en el menú de la izquierda.
+2.  Haz clic en la sub-pestaña **"URL Generator"**.
+3.  En la sección **"SCOPES"**, marca las siguientes dos casillas:
+    *   `bot`: Para identificar tu aplicación como un bot que puede unirse a servidores.
+    *   `applications.commands`: Permite al bot crear y gestionar sus comandos de barra (`/`) en tu servidor. **¡Este es el permiso más importante para que los comandos sean visibles!**
+
+4.  Una vez marcadas, aparecerá un nuevo cuadro de **"BOT PERMISSIONS"** más abajo. Aquí debes seleccionar los permisos que el bot necesita para operar. Para MineControl, activa los siguientes:
+    *   **Gestionar Roles**: Esencial para que el comando `/setup <rolename>` pueda crear y asignar el rol de administrador del bot.
+    *   **Enviar Mensajes**: Necesario para que el bot pueda responder a todos los comandos.
+    *   **Insertar Enlaces**: Requerido para que los anuncios de estado del servidor (cuando está `Online`) se muestren correctamente, ya que usan un formato enriquecido (embeds).
+    *   **Ver Canales**: Permite al bot ver los canales de tu servidor, un requisito básico para poder enviar mensajes en ellos.
+
+5.  Con todo lo anterior seleccionado, se habrá generado una URL en la parte inferior de la página. Cópiala.
+6.  Pega esa URL en tu navegador, elige el servidor al que quieres añadir el bot y autoriza los permisos.
+
+¡Listo! Con esto, el bot tendrá todo lo necesario para funcionar sin problemas en tu servidor.
+
 ## Instalación
 
 Instala el bot directamente desde GitHub con `pip`:
