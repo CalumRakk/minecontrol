@@ -13,6 +13,7 @@ from minecontrol.discord_bot.guild_config import GuildConfigManager
 from .commands import (
     check_server_status,
     echo,
+    set_announcement_channel_logic,
     setup_bot_role,
     start_minecraft_server,
     stop_minecraft_server,
@@ -64,16 +65,18 @@ async def is_admin(interaction: discord.Interaction) -> bool:
 
 def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     """Registra los slash commands y eventos para el bot de Discord."""
+    guild_obj = (
+        discord.Object(id=config.discord_config.guild_id)
+        if config.discord_config.guild_id
+        else None
+    )
 
+    # --- Comandos Administrativos ---
     # Comando setup
     @bot.tree.command(
         name="setup",
         description="Configura el rol necesario para que los comandos de admin funcionen.",
-        guild=(
-            discord.Object(id=config.discord_config.guild_id)
-            if config.discord_config.guild_id
-            else None
-        ),
+        guild=guild_obj,
     )
     @app_commands.describe(
         rolename="El nombre del rol que se usará para los permisos (ej. 'Admin')"
@@ -82,15 +85,24 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     async def setup(interaction: discord.Interaction, rolename: str):
         await setup_bot_role(interaction, rolename, config_manager)
 
+    # Comando set_announcement_channel
+    @bot.tree.command(
+        name="set_announcement_channel",
+        description="Configura el canal para anunciar cuando el servidor esté online.",
+        guild=guild_obj,
+    )
+    @app_commands.describe(channel="El canal donde se enviarán los anuncios.")
+    @log_command
+    async def set_announcement_channel(
+        interaction: discord.Interaction, channel: discord.TextChannel
+    ):
+        await set_announcement_channel_logic(interaction, channel, config_manager)
+
     # Comando echo
     @bot.tree.command(
         name="echo",
         description="Repite el texto que envíes.",
-        guild=(
-            discord.Object(id=config.discord_config.guild_id)
-            if config.discord_config.guild_id
-            else None
-        ),
+        guild=guild_obj,
     )
     @app_commands.describe(text="El texto que quieres que repita.")
     @log_command
@@ -101,11 +113,7 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @bot.tree.command(
         name="server_start",
         description="Inicia el servidor de Minecraft si está apagado.",
-        guild=(
-            discord.Object(id=config.discord_config.guild_id)
-            if config.discord_config.guild_id
-            else None
-        ),
+        guild=guild_obj,
     )
     @app_commands.check(is_admin)
     @log_command
@@ -136,11 +144,7 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @bot.tree.command(
         name="server_stop",
         description="Detiene el servidor de Minecraft si estaba corriendo.",
-        guild=(
-            discord.Object(id=config.discord_config.guild_id)
-            if config.discord_config.guild_id
-            else None
-        ),
+        guild=guild_obj,
     )
     @app_commands.check(is_admin)
     @log_command
@@ -170,11 +174,7 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @bot.tree.command(
         name="server_status",
         description="Verifica si el servidor de Minecraft está online u offline.",
-        guild=(
-            discord.Object(id=config.discord_config.guild_id)
-            if config.discord_config.guild_id
-            else None
-        ),
+        guild=guild_obj,
     )
     @log_command
     async def server_status(interaction: discord.Interaction):
