@@ -35,7 +35,7 @@ async def get_minecraft_server_status(config: MinecraftConfig) -> ServerStatus:
             await client.execute("list")
         return ServerStatus.ONLINE
 
-    except (RCONConnectionError, RCONAuthError):
+    except (RCONConnectionError, RCONAuthError, asyncio.TimeoutError):
         if state_manager.is_starting():
             return ServerStatus.STARTING
         return ServerStatus.OFFLINE
