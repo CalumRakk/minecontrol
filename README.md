@@ -97,6 +97,19 @@ Sigue estos pasos en el [Portal de Desarrolladores de Discord](https://discord.c
 
 ¡Listo! Con esto, el bot tendrá todo lo necesario para funcionar sin problemas en tu servidor.
 
+> [!NOTE]
+> **Problema Común: "Mis miembros no ven los comandos"**
+>
+> Si tus usuarios te dicen que no ven los comandos de barra (`/`), la solución casi siempre es la siguiente:
+>
+> 1.  Ve a **Ajustes del Servidor** > **Roles**.
+> 2.  Selecciona el rol que quieres que vea los comandos. Para que todos puedan usarlos, elige el rol `@everyone`.
+> 3.  En la pestaña de **Permisos** de ese rol, busca la opción **"Usar comandos de aplicación"** y actívala.
+> 4.  Guarda los cambios.
+>
+> Al activar este permiso, los miembros con ese rol podrán ver inmediatamente los comandos públicos como `/server_status`. Los comandos de administración como `/server_start` seguirán protegidos y solo funcionarán para el rol que configuraste con `/setup`.
+
+
 ## Instalación
 
 Instala el bot directamente desde GitHub con `pip`:
