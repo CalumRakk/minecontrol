@@ -59,40 +59,53 @@ async def check_and_announce_startup(
     config_manager: GuildConfigManager,
 ):
     """
-    Espera 60s, comprueba si el servidor está online y lo anuncia si es así.
+    Comprueba el estado del servidor cada 15 segundos durante 4 minutos.
+    Si el servidor se conecta, lo anuncia y detiene la comprobación.
     """
-    await asyncio.sleep(60)  # Espera un minuto
+    max_wait_seconds = 240  # Tiempo máximo de espera (4 minutos)
+    check_interval_seconds = 15  # Intervalo entre comprobaciones (15 segundos)
+    attempts = max_wait_seconds // check_interval_seconds
 
-    status = await get_minecraft_server_status(config)
-    if status != ServerStatus.ONLINE:
-        return
+    for i in range(attempts):
+        status = await get_minecraft_server_status(config)
+        if status == ServerStatus.ONLINE:
+            channel_id = config_manager.get_announcement_channel(guild_id)
+            if not channel_id:
+                print(
+                    f"Servidor online, pero no hay canal de anuncios configurado para el guild {guild_id}"
+                )
+                return
 
-    channel_id = config_manager.get_announcement_channel(guild_id)
-    if not channel_id:
+            channel = bot.get_channel(channel_id)
+            if not isinstance(channel, discord.TextChannel):
+                print(f"Error: No se encontró el canal de anuncios con ID {channel_id}")
+                return
+
+            try:
+                embed = discord.Embed(
+                    title="Servidor de Minecraft Online",
+                    description="El servidor de Minecraft ya está disponible para jugar.",
+                    color=discord.Color.green(),
+                )
+                embed.set_footer(text="¡Nos vemos dentro!")
+                await channel.send(embed=embed)
+            except discord.Forbidden:
+                print(
+                    f"Error: No tengo permisos para enviar mensajes en el canal '{channel.name}'."
+                )
+            except Exception as e:
+                print(f"Error inesperado al enviar el anuncio: {e}")
+
+            return
+
         print(
-            f"Servidor online, pero no hay canal de anuncios configurado para el guild {guild_id}"
+            f"Intento {i+1}/{attempts}: El servidor aún no está online. Reintentando en {check_interval_seconds}s..."
         )
-        return
+        await asyncio.sleep(check_interval_seconds)
 
-    channel = bot.get_channel(channel_id)
-    if not isinstance(channel, discord.TextChannel):
-        print(f"Error: No se encontró el canal de anuncios con ID {channel_id}")
-        return
-
-    try:
-        embed = discord.Embed(
-            title="Servidor de Minecraft Online",
-            description="El servidor de Minecraft ya está disponible para jugar.",
-            color=discord.Color.green(),
-        )
-        embed.set_footer(text="¡Nos vemos dentro!")
-        await channel.send(embed=embed)
-    except discord.Forbidden:
-        print(
-            f"Error: No tengo permisos para enviar mensajes en el canal '{channel.name}'."
-        )
-    except Exception as e:
-        print(f"Error inesperado al enviar el anuncio: {e}")
+    print(
+        f"El servidor no se inició después de {max_wait_seconds} segundos. Se cancela el anuncio."
+    )
 
 
 # --- Comandos ---
