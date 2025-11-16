@@ -40,6 +40,19 @@ class MinecraftConfig(BaseSettings):
         "minecraft", description="Nombre de la sesión de tmux para el servidor"
     )
 
+    # variables para el apagado automático
+    auto_shutdown_enabled: bool = Field(
+        False, description="Habilita el apagado automático si el servidor está vacío."
+    )
+    auto_shutdown_idle_minutes: int = Field(
+        15,
+        description="Minutos que el servidor debe estar vacío antes de iniciar el apagado.",
+    )
+    auto_shutdown_countdown_seconds: int = Field(
+        60,
+        description="Segundos de cuenta atrás final antes de apagar, una vez que se ha anunciado.",
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

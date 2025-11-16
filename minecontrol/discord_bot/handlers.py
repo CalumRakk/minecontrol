@@ -19,6 +19,7 @@ from .commands import (
     stop_minecraft_server,
 )
 from .logging_utils import log_command_usage, setup_command_logger
+from .tasks import auto_shutdown_loop
 
 config_manager = GuildConfigManager(Path("guild_configs.json"))
 command_logger = setup_command_logger()
@@ -150,7 +151,9 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @app_commands.check(is_admin)
     @log_command
     async def server_stop(interaction: discord.Interaction):
-        await stop_minecraft_server(interaction, config.minecraft_config, config_manager)
+        await stop_minecraft_server(
+            interaction, config.minecraft_config, config_manager
+        )
 
     @server_stop.error
     async def server_stop_error(
@@ -195,3 +198,19 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
             print(f"Sincronizados {len(synced)} comandos.")
         except Exception as e:
             print(f"Error al sincronizar comandos: {e}")
+
+        if (
+            config.minecraft_config.auto_shutdown_enabled
+            and config.discord_config.guild_id
+        ):
+            print("Iniciando tarea de auto-apagado del servidor.")
+            auto_shutdown_loop.start(
+                bot,
+                config.minecraft_config,
+                config_manager,
+                config.discord_config.guild_id,
+            )
+        else:
+            print(
+                "La tarea de auto-apagado está deshabilitada o no se especificó un GUILD_ID."
+            )
