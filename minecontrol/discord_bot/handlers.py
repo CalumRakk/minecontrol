@@ -150,7 +150,7 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @app_commands.check(is_admin)
     @log_command
     async def server_stop(interaction: discord.Interaction):
-        await stop_minecraft_server(interaction, config.minecraft_config)
+        await stop_minecraft_server(interaction, config.minecraft_config, config_manager)
 
     @server_stop.error
     async def server_stop_error(
