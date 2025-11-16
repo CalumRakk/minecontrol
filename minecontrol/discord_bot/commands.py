@@ -14,6 +14,7 @@ from ..rcon_client import RCONAuthError, RCONConnectionError, SimpleRCONClient
 from .guild_config import GuildConfigManager
 
 state_manager = ServerStateManager()
+from .utils import send_announcement
 
 # --- Utilidades ---
 
@@ -56,43 +57,24 @@ async def check_and_announce_startup(
     config_manager: GuildConfigManager,
 ):
     """
-    Comprueba el estado del servidor cada 15 segundos durante 4 minutos.
-    Si el servidor se conecta, lo anuncia y detiene la comprobación.
+    Comprueba si el servidor se inicia y lo anuncia usando el módulo central.
     """
-    max_wait_seconds = 240  # Tiempo máximo de espera (4 minutos)
-    check_interval_seconds = 15  # Intervalo entre comprobaciones (15 segundos)
+    max_wait_seconds = 240
+    check_interval_seconds = 15
     attempts = max_wait_seconds // check_interval_seconds
 
     for i in range(attempts):
         status = await get_minecraft_server_status(config)
         if status == ServerStatus.ONLINE:
-            channel_id = config_manager.get_announcement_channel(guild_id)
-            if not channel_id:
-                print(
-                    f"Servidor online, pero no hay canal de anuncios configurado para el guild {guild_id}"
-                )
-                return
-
-            channel = bot.get_channel(channel_id)
-            if not isinstance(channel, discord.TextChannel):
-                print(f"Error: No se encontró el canal de anuncios con ID {channel_id}")
-                return
-
-            try:
-                embed = discord.Embed(
-                    title="Servidor de Minecraft Online",
-                    description="El servidor de Minecraft ya está disponible para jugar.",
-                    color=discord.Color.green(),
-                )
-                embed.set_footer(text="¡Nos vemos dentro!")
-                await channel.send(embed=embed)
-            except discord.Forbidden:
-                print(
-                    f"Error: No tengo permisos para enviar mensajes en el canal '{channel.name}'."
-                )
-            except Exception as e:
-                print(f"Error inesperado al enviar el anuncio: {e}")
-
+            await send_announcement(
+                bot=bot,
+                guild_manager=config_manager,
+                guild_id=guild_id,
+                title="Servidor de Minecraft Online",
+                description="El servidor de Minecraft ya está disponible para jugar.",
+                color=discord.Color.green(),
+                footer_text="¡Nos vemos dentro!",
+            )
             return
 
         print(
@@ -104,6 +86,7 @@ async def check_and_announce_startup(
         f"El servidor no se inició después de {max_wait_seconds} segundos. Se cancela el anuncio."
     )
 
+
 async def check_and_announce_shutdown(
     bot: commands.Bot,
     config: MinecraftConfig,
@@ -111,54 +94,34 @@ async def check_and_announce_shutdown(
     config_manager: GuildConfigManager,
 ):
     """
-    Comprueba el estado del servidor cada 3 segundos durante 4 minutos.
-    Si el servidor se desconecta, lo anuncia y detiene la comprobación.
+    Comprueba si el servidor se apaga y lo anuncia usando el módulo central.
     """
-    max_wait_seconds = 120  # Tiempo máximo de espera (2 minutos)
-    check_interval_seconds = 3  # Intervalo entre comprobaciones (15 segundos)
+    max_wait_seconds = 120
+    check_interval_seconds = 3
     attempts = max_wait_seconds // check_interval_seconds
 
     for i in range(attempts):
         status = await get_minecraft_server_status(config)
         if status == ServerStatus.OFFLINE:
-            channel_id = config_manager.get_announcement_channel(guild_id)
-            if not channel_id:
-                print(
-                    f"Servidor desconectado, pero no hay canal de anuncios configurado para el guild {guild_id}"
-                )
-                return
-
-            channel = bot.get_channel(channel_id)
-            if not isinstance(channel, discord.TextChannel):
-                print(f"Error: No se encontró el canal de anuncios con ID {channel_id}")
-                return
-
-            try:
-                embed = discord.Embed(
-                    title="Servidor de Minecraft Desconectado",
-                    description="El servidor de Minecraft se ha desconectado.",
-                    color=discord.Color.red(),
-                )
-                embed.set_footer(text="¡Nos vemos pronto!")
-                await channel.send(embed=embed)
-            except discord.Forbidden:
-                print(
-                    f"Error: No tengo permisos para enviar mensajes en el canal '{channel.name}'."
-                )
-            except Exception as e:
-                print(f"Error inesperado al enviar el anuncio: {e}")
-
+            await send_announcement(
+                bot=bot,
+                guild_manager=config_manager,
+                guild_id=guild_id,
+                title="Servidor de Minecraft Desconectado",
+                description="El servidor de Minecraft se ha desconectado.",
+                color=discord.Color.red(),
+                footer_text="¡Hasta pronto!",
+            )
             return
 
         print(
-            f"Intento {i+1}/{attempts}: El servidor aun no se desconectó. Reintentando en {check_interval_seconds}s..."
+            f"Intento {i+1}/{attempts}: El servidor aún no se desconectó. Reintentando en {check_interval_seconds}s..."
         )
         await asyncio.sleep(check_interval_seconds)
 
     print(
-        f"El servidor alguna vez se desconectó antes de {max_wait_seconds} segundos. Se cancela el anuncio."
+        f"El servidor no se desconectó en {max_wait_seconds} segundos. Se cancela el anuncio."
     )
-
 
 
 # --- Comandos ---
@@ -242,7 +205,9 @@ async def start_minecraft_server(
 
 
 async def stop_minecraft_server(
-    interaction: discord.Interaction, config: MinecraftConfig,config_manager: GuildConfigManager,
+    interaction: discord.Interaction,
+    config: MinecraftConfig,
+    config_manager: GuildConfigManager,
 ):
     """
     Envía el comando 'stop' a la sesión tmux del servidor de Minecraft.
@@ -276,12 +241,12 @@ async def stop_minecraft_server(
                 "C-m",  # Enviamos el comando 'stop' y luego la tecla Enter (C-m)
             ]
         )
-       
+
         bot = cast(commands.Bot, interaction.client)
         bot.loop.create_task(
             check_and_announce_shutdown(bot, config, guild_id, config_manager)
         )
-        
+
         await interaction.followup.send(
             f"Comando de apagado enviado al servidor. La sesión de tmux `{session_name}` se cerrará en breve."
         )

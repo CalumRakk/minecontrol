@@ -3,6 +3,7 @@ import subprocess
 import time
 from typing import cast
 
+import discord
 from discord.ext import commands, tasks
 
 from minecontrol.config import MinecraftConfig
@@ -11,11 +12,11 @@ from minecontrol.discord_bot.guild_config import GuildConfigManager
 from minecontrol.rcon_client import RCONConnectionError, SimpleRCONClient
 
 from .enums import AutoShutdownStatus, ServerStatus
+from .utils import send_announcement
 
 
 class AutoShutdownState:
     def __init__(self):
-        # El estado inicial ahora es MONITORING, mucho más claro.
         self.status: AutoShutdownStatus = AutoShutdownStatus.MONITORING
         self.empty_start_time: float | None = None
         self.shutdown_countdown_start_time: float | None = None
@@ -112,8 +113,23 @@ async def auto_shutdown_loop(
                         mc_config.terminal_session_name,
                         "stop",
                         "C-m",
-                    ]
+                    ],
+                    check=True,
                 )
+
+                await asyncio.sleep(5)
+                await send_announcement(
+                    bot=bot,
+                    guild_manager=guild_manager,
+                    guild_id=guild_id,
+                    title="Servidor Apagado por Inactividad",
+                    description=f"El servidor se ha apagado automáticamente después de estar vacío por más de {mc_config.auto_shutdown_idle_minutes} minutos.",
+                    color=discord.Color.orange(),
+                    footer_text="Se iniciará de nuevo cuando alguien use /server_start.",
+                )
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error al ejecutar el comando de apagado por tmux: {e}")
             finally:
                 shutdown_state.reset()
         return
