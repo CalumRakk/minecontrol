@@ -1,8 +1,10 @@
+import asyncio
 import subprocess
 from pathlib import Path
 from typing import Sequence, cast
 
 import discord
+from discord.ext import commands
 
 from minecontrol.config import MinecraftConfig
 from minecontrol.discord_bot.enums import ServerStatus
@@ -47,6 +49,52 @@ async def get_minecraft_server_status(config: MinecraftConfig) -> ServerStatus:
         return ServerStatus.UNKNOWN
 
 
+# --- Tareas en segundo plano ---
+
+
+async def check_and_announce_startup(
+    bot: commands.Bot,
+    config: MinecraftConfig,
+    guild_id: int,
+    config_manager: GuildConfigManager,
+):
+    """
+    Espera 60s, comprueba si el servidor está online y lo anuncia si es así.
+    """
+    await asyncio.sleep(60)  # Espera un minuto
+
+    status = await get_minecraft_server_status(config)
+    if status != ServerStatus.ONLINE:
+        return
+
+    channel_id = config_manager.get_announcement_channel(guild_id)
+    if not channel_id:
+        print(
+            f"Servidor online, pero no hay canal de anuncios configurado para el guild {guild_id}"
+        )
+        return
+
+    channel = bot.get_channel(channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        print(f"Error: No se encontró el canal de anuncios con ID {channel_id}")
+        return
+
+    try:
+        embed = discord.Embed(
+            title="Servidor de Minecraft Online",
+            description="El servidor de Minecraft ya está disponible para jugar.",
+            color=discord.Color.green(),
+        )
+        embed.set_footer(text="¡Nos vemos dentro!")
+        await channel.send(embed=embed)
+    except discord.Forbidden:
+        print(
+            f"Error: No tengo permisos para enviar mensajes en el canal '{channel.name}'."
+        )
+    except Exception as e:
+        print(f"Error inesperado al enviar el anuncio: {e}")
+
+
 # --- Comandos ---
 
 
@@ -63,7 +111,9 @@ async def echo(interaction: discord.Interaction, text: str):
 
 
 async def start_minecraft_server(
-    interaction: discord.Interaction, config: MinecraftConfig
+    interaction: discord.Interaction,
+    config: MinecraftConfig,
+    config_manager: GuildConfigManager,
 ):
     """
     Inicia el servidor de Minecraft en una sesión 'tmux' si no está ya corriendo.
@@ -95,12 +145,27 @@ async def start_minecraft_server(
         return
 
     try:
+
+        guild_id = cast(int, interaction.guild_id)
+        response_message = f"¡Iniciando el servidor en la sesión `{session_name}`!"
+        if not config_manager.get_announcement_channel(guild_id):
+            response_message += (
+                "\n\n**Nota:** Para que anuncie públicamente cuando esté listo, "
+                "configura un canal con `/set_announcement_channel`."
+            )
+        else:
+            response_message += " Se anunciará públicamente cuando esté listo."
+
         state_manager.set_starting()
         subprocess.Popen(
             ["tmux", "new-session", "-s", session_name, "-d", str(start_script)]
         )
-        await interaction.followup.send(
-            f"¡Iniciando el servidor de Minecraft en la sesión de tmux `{session_name}`! Dale uno o dos minutos para que arranque."
+
+        await interaction.followup.send(response_message)
+
+        bot = cast(commands.Bot, interaction.client)
+        bot.loop.create_task(
+            check_and_announce_startup(bot, config, guild_id, config_manager)
         )
 
     except Exception as e:
@@ -203,8 +268,9 @@ async def setup_bot_role(
         )
         config_manager.set_admin_role(interaction.guild.id, rolename)  # type: ignore
         await interaction.followup.send(
-            f"Rol '{new_role.name}' creado con éxito. "
-            "Ahora puedes usar los comandos restringidos a este rol.",
+            f"El rol '{rolename}' ha sido configurado como rol de administrador.\n\n"
+            "**Siguiente paso recomendado:** Usa el comando `/set_announcement_channel` "
+            "en el canal donde quieras que anuncie cuando el servidor esté online.",
             ephemeral=True,
         )
     except discord.Forbidden:
@@ -235,3 +301,28 @@ async def check_server_status(
         )
     else:  # OFFLINE o UNKNOWN
         await interaction.followup.send("**El servidor de Minecraft está Offline.**")
+
+
+async def set_announcement_channel_logic(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel,
+    config_manager: GuildConfigManager,
+):
+    """
+    Configura el canal para los anuncios del servidor.
+    """
+    await interaction.response.defer(ephemeral=True)
+
+    guild_permissions = cast(
+        discord.Permissions, getattr(interaction.user, "guild_permissions", None)
+    )
+    if guild_permissions is None or not guild_permissions.administrator:
+        await interaction.followup.send(
+            "Debes ser administrador del servidor para usar este comando."
+        )
+        return
+
+    config_manager.set_announcement_channel(interaction.guild.id, channel.id)  # type: ignore
+    await interaction.followup.send(
+        f"Perfecto. Los anuncios del servidor se enviarán ahora en el canal {channel.mention}."
+    )

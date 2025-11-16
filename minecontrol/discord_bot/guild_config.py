@@ -22,16 +22,31 @@ class GuildConfigManager:
         with open(self.config_path, "w", encoding="utf-8") as f:
             json.dump(self.config_data, f, indent=4)
 
-    def set_admin_role(self, guild_id: int, role_name: str):
-        """Guarda el nombre del rol de administrador para un servidor."""
+    def _get_or_create_guild_config(self, guild_id: int) -> dict:
+        """Obtiene o crea la entrada de configuración para un guild."""
         guild_id_str = str(guild_id)
         if guild_id_str not in self.config_data:
             self.config_data[guild_id_str] = {}
+        return self.config_data[guild_id_str]
 
-        self.config_data[guild_id_str]["admin_role"] = role_name
+    def set_admin_role(self, guild_id: int, role_name: str):
+        """Guarda el nombre del rol de administrador para un servidor."""
+        guild_config = self._get_or_create_guild_config(guild_id)
+        guild_config["admin_role"] = role_name
         self._save_config()
 
     def get_admin_role(self, guild_id: int) -> Optional[str]:
         """Obtiene el nombre del rol de administrador para un servidor."""
         guild_id_str = str(guild_id)
         return self.config_data.get(guild_id_str, {}).get("admin_role")
+
+    def set_announcement_channel(self, guild_id: int, channel_id: int):
+        """Guarda el ID del canal de anuncios para un servidor."""
+        guild_config = self._get_or_create_guild_config(guild_id)
+        guild_config["announcement_channel_id"] = channel_id
+        self._save_config()
+
+    def get_announcement_channel(self, guild_id: int) -> Optional[int]:
+        """Obtiene el ID del canal de anuncios para un servidor."""
+        guild_id_str = str(guild_id)
+        return self.config_data.get(guild_id_str, {}).get("announcement_channel_id")
