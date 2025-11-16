@@ -1,12 +1,3 @@
-🚧🔨👷‍♂️
-
-    ⚠️ AVISO: Proyecto en Fase Inicial ⚠️
-    
-    MineControl se encuentra en sus primeras etapas de desarrollo. 
-    Aunque es un proyecto seguro, es posible que hayan funcionalidades incompletas, 
-    errores menores o comportamientos inesperados.
-
-
 # MineControl
 
 **MineControl** es un bot de Discord simple y potente diseñado para una sola tarea: permitirte gestionar el servidor de Minecraft que se ejecuta **en la misma máquina**, usando comandos de barra (`/`).
@@ -18,16 +9,11 @@ Olvídate de conectarte por SSH para un simple reinicio; MineControl actúa como
 
 -   **Gestión Directa del Proceso:** Inicia y detiene tu servidor de forma segura **en la misma máquina** utilizando sesiones `tmux`.
 -   **Monitoreo en Tiempo Real:** Comprueba si tu servidor está `Online` u `Offline` en cualquier momento.
+-   **Apagado Automático por Inactividad:** Ahorra recursos apagando el servidor de forma inteligente cuando lleva un tiempo vacío. ¡Totalmente configurable!
+-   **Anuncios de Estado Configurables:** Notifica a tu comunidad en un canal específico cuando el servidor está `Online`, se desconecta o se apaga por inactividad.
 -   **Gestión de Permisos:** Asegura que solo los roles que tú elijas puedan ejecutar comandos sensibles.
 -   **Fácil de Usar:** Integración nativa con los comandos de barra (`/`) de Discord.
 -   **Ligero y Enfocado**: Solo hace una cosa y la hace bien 🔥😎
-
-## Requisitos Previos
-
--   **Arquitectura Co-alojada:** El bot y tu servidor de Minecraft **deben** ejecutarse en la misma máquina.
--   **Python 3.10.0 o superior**.
--   **`tmux`** instalado en la máquina. Puedes instalarlo con `sudo apt install tmux` (Debian/Ubuntu) o `sudo yum install tmux` (CentOS).
--   Un **Script de Inicio** para tu servidor (ej. `start.sh`).
 
 ### Guía: Crear tu Script de Inicio (`start.sh`)
 
@@ -146,6 +132,12 @@ El bot se configura mediante un único archivo de entorno (`.env`). Crea un arch
 # El token de tu aplicación de bot de Discord. (Obligatorio)
 DISCORD_BOT_TOKEN="AQUÍ_TU_TOKEN_DE_DISCORD"
 
+# El ID de tu servidor de Discord. (Recomendado)
+# Esto evita que pasen horas para que discord registre los comandos de tu bot de discord.
+# Ve a Ajustes de Usuario > Avanzado y activa el 'Modo de desarrollador'. Luego, haz clic derecho en el icono de tu servidor y selecciona Copiar ID del servidor.
+DISCORD_GUILD_ID=123456789012345678
+
+
 # --- Configuración del Servidor de Minecraft ---
 # La ruta absoluta al directorio de tu servidor. (Obligatorio)
 MINECRAFT_SERVER_PATH="/ruta/absoluta/a/tu/servidor/minecraft"
@@ -153,11 +145,13 @@ MINECRAFT_SERVER_PATH="/ruta/absoluta/a/tu/servidor/minecraft"
 # La contraseña RCON de tu archivo server.properties. (Obligatorio)
 MINECRAFT_RCON_PASSWORD="TU_CONTRASEÑA_RCON"
 
-# El ID de tu servidor de Discord. (Recomendado)
-# Esto evita que pasen horas para que discord registre los comandos de tu bot de discord.
-# Ve a Ajustes de Usuario > Avanzado y activa el 'Modo de desarrollador'. Luego, haz clic derecho en el icono de tu servidor y selecciona Copiar ID del servidor.
-DISCORD_GUILD_ID=123456789012345678
 
+# --- Configuración del Apagado Automático (Opcional) ---
+# Ponlo en 'true' para activar el apagado cuando el servidor esté vacío.
+MINECRAFT_AUTO_SHUTDOWN_ENABLED=false
+
+# Minutos que el servidor debe estar vacío antes de iniciar el apagado.
+MINECRAFT_AUTO_SHUTDOWN_IDLE_MINUTES=15
 ```
 
 
@@ -174,8 +168,16 @@ El bot se conectará a Discord y estará listo para recibir comandos.
 
 ### Comandos Disponibles
 
--   `/setup <rolename>`: **(Requiere Permisos de Admin en Discord)**. Configura el rol que podrá usar los comandos de gestión del servidor. Ejemplo: `/setup Admin`.
+#### Comandos de Administración
+*(Requieren el rol configurado con `/setup`)*
+
+-   `/setup <rolename>`: **(Requiere Permisos de Admin en Discord)**. Configura o crea el rol que podrá usar los comandos de gestión del servidor. Ejemplo: `/setup MinecrafterosAdmin`.
+-   `/set_announcement_channel <canal>`: Designa un canal de texto para que el bot anuncie cuándo el servidor está online u offline.
 -   `/server_start`: Inicia el servidor de Minecraft si está apagado.
 -   `/server_stop`: Detiene el servidor de Minecraft si está encendido.
+
+#### Comandos Públicos
+*(Disponibles para @everyone, si tienen permisos de usar comandos de aplicación)*
+
 -   `/server_status`: Muestra si el servidor de Minecraft está `Online` u `Offline`.
 -   `/echo <text>`: Un comando simple para verificar que el bot está respondiendo.
