@@ -326,15 +326,6 @@ async def set_announcement_channel_logic(
     """
     await interaction.response.defer(ephemeral=True)
 
-    guild_permissions = cast(
-        discord.Permissions, getattr(interaction.user, "guild_permissions", None)
-    )
-    if guild_permissions is None or not guild_permissions.administrator:
-        await interaction.followup.send(
-            "Debes ser administrador del servidor para usar este comando."
-        )
-        return
-
     config_manager.set_announcement_channel(interaction.guild.id, channel.id)  # type: ignore
     await interaction.followup.send(
         f"Perfecto. Los anuncios del servidor se enviarán ahora en el canal {channel.mention}."

@@ -92,6 +92,7 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
         guild=guild_obj,
     )
     @app_commands.describe(channel="El canal donde se enviarán los anuncios.")
+    @app_commands.check(is_admin)
     @log_command
     async def set_announcement_channel(
         interaction: discord.Interaction, channel: discord.TextChannel
