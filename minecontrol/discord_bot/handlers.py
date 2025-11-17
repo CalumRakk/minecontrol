@@ -18,25 +18,29 @@ from .commands import (
     start_minecraft_server,
     stop_minecraft_server,
 )
+from .i18n import TranslationsManager
 from .logging_utils import log_command_usage, setup_command_logger
 from .tasks import auto_shutdown_loop
 
 config_manager = GuildConfigManager(Path("guild_configs.json"))
 command_logger = setup_command_logger()
 log_command = log_command_usage(command_logger)
+locales_path = Path(__file__).parent / "locales"
+t = TranslationsManager(locales_path)
 
 
 async def is_admin(interaction: discord.Interaction) -> bool:
     """
     Verifica si el usuario tiene el rol de admin configurado para este servidor.
     """
+    locale = str(interaction.locale)
+
     # 1. Obtener el nombre del rol guardado para este servidor
     id_ = cast(int, getattr(interaction.guild, "id", None))
     admin_role_name = config_manager.get_admin_role(id_)
     if id_ is None or not admin_role_name:
         await interaction.response.send_message(
-            "El rol de administrador no ha sido configurado en este servidor. "
-            "Un administrador debe usar el comando `/setup` primero.",
+            t.get_string("commands.errors.admin_role_not_set", locale),
             ephemeral=True,
         )
         return False
@@ -46,8 +50,9 @@ async def is_admin(interaction: discord.Interaction) -> bool:
     role = discord.utils.get(roles, name=admin_role_name)
     if not role:
         await interaction.response.send_message(
-            f"El rol configurado ('{admin_role_name}') ya no existe. "
-            "Un administrador debe usar `/setup` para reconfigurarlo.",
+            t.get_string(
+                "commands.errors.user_not_admin", locale, role_name=admin_role_name
+            ),
             ephemeral=True,
         )
         return False
@@ -121,7 +126,11 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @log_command
     async def server_start(interaction: discord.Interaction):
         await start_minecraft_server(
-            interaction, config.minecraft_config, config_manager
+            interaction,
+            config.minecraft_config,
+            config_manager,
+            t,
+            str(interaction.locale),
         )
 
     @server_start.error

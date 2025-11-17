@@ -12,9 +12,10 @@ from minecontrol.discord_bot.server_state import ServerStateManager
 
 from ..rcon_client import RCONAuthError, RCONConnectionError, SimpleRCONClient
 from .guild_config import GuildConfigManager
+from .i18n import TranslationsManager
+from .utils import send_announcement
 
 state_manager = ServerStateManager()
-from .utils import send_announcement
 
 # --- Utilidades ---
 
@@ -143,6 +144,8 @@ async def start_minecraft_server(
     interaction: discord.Interaction,
     config: MinecraftConfig,
     config_manager: GuildConfigManager,
+    t: TranslationsManager,
+    locale: str,
 ):
     """
     Inicia el servidor de Minecraft en una sesión 'tmux' si no está ya corriendo.
@@ -152,7 +155,11 @@ async def start_minecraft_server(
     session_name = config.terminal_session_name
     if exists_tmux_session(session_name):
         await interaction.followup.send(
-            f"El servidor de Minecraft ya está en ejecución en la sesión de tmux `{session_name}`."
+            t.get_string(
+                "commands.start_server.already_running",
+                locale,
+                session_name=session_name,
+            )
         )
         return
 
@@ -162,30 +169,33 @@ async def start_minecraft_server(
 
     if not start_script.exists():
         await interaction.followup.send(
-            f"**Error:** No se encontró el script `start.sh` en la ruta `{server_path}`."
+            t.get_string(
+                "commands.start_server.script_not_found",
+                locale,
+                server_path=str(server_path),
+            )
         )
         return
 
     current_status = await get_minecraft_server_status(config)
     if current_status == ServerStatus.ONLINE:
         await interaction.followup.send(
-            "El servidor ya está online. No se necesita ninguna acción."
+            t.get_string("commands.start_server.already_online", locale)
         )
         return
 
     try:
 
         guild_id = cast(int, interaction.guild_id)
-        response_message = f"¡Iniciando el servidor en la sesión `{session_name}`!"
-        if not config_manager.get_announcement_channel(guild_id):
-            response_message += (
-                "\n\n**Nota:** Para que anuncie públicamente cuando esté listo, "
-                "configura un canal con `/set_announcement_channel`."
-            )
+        if config_manager.get_announcement_channel(guild_id):
+            response_key = "commands.start_server.starting_public"
         else:
-            response_message += " Se anunciará públicamente cuando esté listo."
+            response_key = "commands.start_server.starting_private"
+
+        response_message = t.get_string(response_key, locale, session_name=session_name)
 
         state_manager.set_starting()
+
         subprocess.Popen(
             ["tmux", "new-session", "-s", session_name, "-d", str(start_script)]
         )
@@ -200,7 +210,7 @@ async def start_minecraft_server(
     except Exception as e:
         state_manager.set_stopped()
         await interaction.followup.send(
-            f"**Error inesperado al iniciar el servidor:**\n```\n{e}\n```"
+            t.get_string("commands.start_server.error", locale, error=e)
         )
 
 
