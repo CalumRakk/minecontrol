@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import os
 from pathlib import Path
 from typing import Union
 
@@ -13,6 +14,22 @@ from minecontrol.discord_bot.handlers import register_handlers_discord
 async def main(path: Union[Path, str]):
     path = Path(path) if isinstance(path, str) else path
     config = load_config_orchestator(path)
+
+    print("Verificando requisitos del servidor de Minecraft...")
+    server_path = Path(config.minecraft_config.server_path)
+    start_script = server_path / "start.sh"
+
+    if not start_script.exists():
+        error_msg = f"Error Crítico: El script 'start.sh' no se encuentra en la ruta especificada: '{server_path}'"
+        print(error_msg)
+        raise FileNotFoundError(error_msg)
+
+    if not os.access(start_script, os.X_OK):
+        error_msg = f"Error Crítico: El script '{start_script}' no tiene permisos de ejecución. Ejecuta 'chmod +x {start_script}' en tu terminal."
+        print(error_msg)
+        raise PermissionError(error_msg)
+
+    print("Requisitos verificados correctamente.")
 
     print("Configurando bot de Discord...")
     discord_bot = init_discord_client(config.discord_config)
@@ -36,10 +53,10 @@ def run():
         asyncio.run(main(args.env_file))
     except KeyboardInterrupt:
         print("\nCerrando bots...")
-    except FileNotFoundError:
-        print(
-            f"Error: No se pudo encontrar el archivo de configuración en '{args.env_file}'"
-        )
+    except (FileNotFoundError, PermissionError) as e:
+        print(f"\nFallo en la comprobación inicial. El bot no se ha iniciado.")
+    except Exception as e:
+        print(f"Ocurrió un error inesperado: {e}")
 
 
 if __name__ == "__main__":
