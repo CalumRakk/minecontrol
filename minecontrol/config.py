@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Union
 
-from discord import Optional
 from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings
 
@@ -10,8 +9,8 @@ class DiscordConfig(BaseSettings):
     """Configuración específica para Discord."""
 
     bot_token: str = Field(..., description="Token del bot de Discord")
-    guild_id: Optional[int] = Field(
-        None, description="ID del servidor de Discord para pruebas (opcional)"
+    guild_id: int = Field(
+        ..., description="ID del servidor de Discord para pruebas (opcional)"
     )
 
     class Config:

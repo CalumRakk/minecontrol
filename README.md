@@ -132,7 +132,7 @@ El bot se configura mediante un único archivo de entorno (`.env`). Crea un arch
 # El token de tu aplicación de bot de Discord. (Obligatorio)
 DISCORD_BOT_TOKEN="AQUÍ_TU_TOKEN_DE_DISCORD"
 
-# El ID de tu servidor de Discord. (Recomendado)
+# El ID de tu servidor de Discord. (Obligatorio)
 # Esto evita que pasen horas para que discord registre los comandos de tu bot de discord.
 # Ve a Ajustes de Usuario > Avanzado y activa el 'Modo de desarrollador'. Luego, haz clic derecho en el icono de tu servidor y selecciona Copiar ID del servidor.
 DISCORD_GUILD_ID=123456789012345678

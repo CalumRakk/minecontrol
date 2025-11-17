@@ -66,11 +66,7 @@ async def is_admin(interaction: discord.Interaction) -> bool:
 
 def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     """Registra los slash commands y eventos para el bot de Discord."""
-    guild_obj = (
-        discord.Object(id=config.discord_config.guild_id)
-        if config.discord_config.guild_id
-        else None
-    )
+    guild_obj = discord.Object(id=config.discord_config.guild_id)
 
     # --- Comandos Administrativos ---
     # Comando setup
@@ -189,20 +185,13 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     async def on_ready():
         print(f"Bot de Discord conectado como {bot.user}")
         try:
-            guild = (
-                discord.Object(id=config.discord_config.guild_id)
-                if config.discord_config.guild_id
-                else None
-            )
-            synced = await bot.tree.sync(guild=guild)
+            synced = await bot.tree.sync(guild=guild_obj)
             print(f"Sincronizados {len(synced)} comandos.")
+
         except Exception as e:
             print(f"Error al sincronizar comandos: {e}")
 
-        if (
-            config.minecraft_config.auto_shutdown_enabled
-            and config.discord_config.guild_id
-        ):
+        if config.minecraft_config.auto_shutdown_enabled:
             print("Iniciando tarea de auto-apagado del servidor.")
             auto_shutdown_loop.start(
                 bot,
@@ -211,6 +200,4 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
                 config.discord_config.guild_id,
             )
         else:
-            print(
-                "La tarea de auto-apagado está deshabilitada o no se especificó un GUILD_ID."
-            )
+            print("La tarea de auto-apagado está deshabilitada.")

@@ -12,3 +12,5 @@ logs/
 *.json
 *.txt
 *.env
+
+script.py
