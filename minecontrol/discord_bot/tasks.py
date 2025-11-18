@@ -41,11 +41,12 @@ async def get_player_count(config: MinecraftConfig) -> int:
             response = await client.execute("list")
 
             print(f"DEBUG: Respuesta RCON del comando 'list': '{response}'")
-            match = re.search(r"(\d+)/\d+", response)
+            match = re.search(r"(\d+)/\d+|There are (\d+) of", response)
 
             if match:
                 # El grupo 1 de la expresión regular es el primer número (los jugadores actuales).
-                return int(match.group(1))
+                player_count_str = match.group(1) or match.group(2)
+                return int(player_count_str)
             else:
                 # Si no se encuentra el patrón, asumimos que hubo un error y devolvemos -1
                 print(
