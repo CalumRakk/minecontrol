@@ -1,4 +1,5 @@
 import asyncio
+import re
 import subprocess
 import time
 from typing import cast
@@ -38,11 +39,19 @@ async def get_player_count(config: MinecraftConfig) -> int:
             config.rcon_host, config.rcon_port, config.rcon_password
         ) as client:
             response = await client.execute("list")
-            # El formato de respuesta es "There are 1/20 players online: player1"
-            parts = response.split(" ")
-            if len(parts) >= 3 and "/" in parts[2]:
-                return int(parts[2].split("/")[0])
-            return 0
+
+            print(f"DEBUG: Respuesta RCON del comando 'list': '{response}'")
+            match = re.search(r"(\d+)/\d+", response)
+
+            if match:
+                # El grupo 1 de la expresión regular es el primer número (los jugadores actuales).
+                return int(match.group(1))
+            else:
+                # Si no se encuentra el patrón, asumimos que hubo un error y devolvemos -1
+                print(
+                    f"WARN: No se pudo extraer el contador de jugadores de la respuesta RCON: '{response}'"
+                )
+                return -1
     except (RCONConnectionError, asyncio.TimeoutError):
         return -1
     except Exception:
@@ -65,6 +74,8 @@ async def auto_shutdown_loop(
     if player_count == -1:
         print("Auto-Shutdown: No se pudo conectar a RCON. Se omite el ciclo.")
         return
+
+    print(f"Auto-Shutdown: Jugadores conectados: {player_count}")
 
     # CASO 1: Hay jugadores. Volvemos al estado de monitoreo.
     if player_count > 0:
