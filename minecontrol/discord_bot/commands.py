@@ -69,8 +69,8 @@ def perform_backup_zip(source_dir:Path, backup_folder:Path, world_name:str) -> P
     Se ejecutará en un thread aparte.
     """
     timestamp= datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    zip_filename= f"{world_name}_backup_{timestamp}.zip"
-    archive_path= backup_folder / zip_filename
+    filename= f"{world_name}_backup_{timestamp}"
+    archive_path= backup_folder / filename
 
     final_path= shutil.make_archive(base_name= str(archive_path), format='zip', root_dir= source_dir, base_dir= world_name)
     return Path(final_path)
@@ -442,8 +442,7 @@ async def backup_server(interaction: discord.Interaction, config: MinecraftConfi
                 await client.execute(f"say Backup completado: {final_zip_path.name}.")
         
         await interaction.followup.send(
-            f"Backup completado: `{final_zip_path}` ({file_size_mb:.2f} MB)."
-            f"Ruta: `{final_zip_path.resolve()}`."
+            f"Backup completado: `{final_zip_path.name}` ({file_size_mb:.2f} MB)."
         )
     except Exception as e:
         if is_online:
