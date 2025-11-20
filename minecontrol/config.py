@@ -32,7 +32,7 @@ class MinecraftConfig(BaseSettings):
     )
     
     backup_path: str = Field(
-        ..., description="Ruta relativa o absoluta donde se almacenarán los archivos .zip de backup"
+        "backups", description="Ruta relativa o absoluta donde se almacenarán los archivos .zip de backup"
     )
 
     # variables para la gestión del proceso
