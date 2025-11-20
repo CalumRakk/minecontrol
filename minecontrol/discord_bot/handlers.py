@@ -195,9 +195,9 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @backup_command.error
     async def backup_command_error(interaction: discord.Interaction, error: AppCommandError):
         if isinstance(error, app_commands.MissingRole) or isinstance(error, CheckFailure):
-            await interaction.response.send_message("No tienes permisos para hacer backups.", ephemeral=True)
+            await interaction.followup.send("No tienes permisos para hacer backups.", ephemeral=True)
         else:
-            await interaction.response.send_message(f"Error: {error}", ephemeral=True)
+            await interaction.followup.send(f"Error: {error}", ephemeral=True)
 
     # Evento que se ejecuta cuando el bot está listo
     @bot.event
