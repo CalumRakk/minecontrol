@@ -30,6 +30,10 @@ class MinecraftConfig(BaseSettings):
     rcon_password: str = Field(
         ..., description="Contraseña RCON del servidor de Minecraft"
     )
+    
+    backup_path: str = Field(
+        ..., description="Ruta relativa o absoluta donde se almacenarán los archivos .zip de backup"
+    )
 
     # variables para la gestión del proceso
     server_path: str = Field(

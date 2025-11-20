@@ -11,6 +11,7 @@ from minecontrol.config import ManagerConfig
 from minecontrol.discord_bot.guild_config import GuildConfigManager
 
 from .commands import (
+    backup_server,
     check_server_status,
     echo,
     set_announcement_channel_logic,
@@ -179,6 +180,24 @@ def register_handlers_discord(bot: commands.Bot, config: ManagerConfig):
     @log_command
     async def server_status(interaction: discord.Interaction):
         await check_server_status(interaction, config.minecraft_config)
+
+    # Comando backup
+    @bot.tree.command(
+        name="backup",
+        description="Realiza una copia de seguridad del mundo (zip). Funciona con el servidor ON u OFF.",
+        guild=guild_obj,
+    )
+    @app_commands.check(is_admin)
+    @log_command
+    async def backup_command(interaction: discord.Interaction):
+        await backup_server(interaction, config.minecraft_config)
+    
+    @backup_command.error
+    async def backup_command_error(interaction: discord.Interaction, error: AppCommandError):
+        if isinstance(error, app_commands.MissingRole) or isinstance(error, CheckFailure):
+            await interaction.response.send_message("No tienes permisos para hacer backups.", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"Error: {error}", ephemeral=True)
 
     # Evento que se ejecuta cuando el bot está listo
     @bot.event

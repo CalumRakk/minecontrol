@@ -1,5 +1,7 @@
 import asyncio
+import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Sequence, cast
 
@@ -46,6 +48,32 @@ async def get_minecraft_server_status(config: MinecraftConfig) -> ServerStatus:
             return ServerStatus.STARTING
         return ServerStatus.UNKNOWN
 
+
+def get_leval_name(server_path: Path) -> str:
+    props_file= server_path / "server.properties"
+    level_name= "world"
+    if props_file.exists():
+        try:
+            with open(props_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().lower().startswith("level-name="):
+                        level_name = line.strip().split("=", 1)[1]
+                        break
+        except Exception:
+            print("No se pudo leer el archivo server.properties para obtener el level-name.")
+    return level_name
+
+def perform_backup_zip(source_dir:Path, backup_folder:Path, world_name:str) -> Path:
+    """
+    Función bloqueante (CPU bound) que comprime la carpeta.
+    Se ejecutará en un thread aparte.
+    """
+    timestamp= datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    zip_filename= f"{world_name}_backup_{timestamp}.zip"
+    archive_path= backup_folder / zip_filename
+
+    final_path= shutil.make_archive(base_name= str(archive_path), format='zip', root_dir= source_dir, base_dir= world_name)
+    return Path(final_path)
 
 # --- Tareas en segundo plano ---
 
@@ -354,3 +382,80 @@ async def set_announcement_channel_logic(
     await interaction.followup.send(
         f"Perfecto. Los anuncios del servidor se enviarán ahora en el canal {channel.mention}."
     )
+
+
+async def backup_server(interaction: discord.Interaction, config: MinecraftConfig):
+
+    await interaction.response.defer(ephemeral=False)
+
+    server_path= Path(config.server_path)
+    level_name= get_leval_name(server_path)
+    world_path= server_path / level_name
+
+    # Determinar dónde guardar el backup
+    if Path(config.backup_path).is_absolute():
+        backup_dir= Path(config.backup_path)
+    else:
+        backup_dir= server_path / config.backup_path
+
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    if not world_path.exists():
+        await interaction.followup.send(
+            f"**Error:** No se encontró la carpeta del mundo `{level_name}` en la ruta `{world_path}`."
+        )
+        return
+    
+    status= await get_minecraft_server_status(config)
+    is_online= status == ServerStatus.ONLINE
+
+    try:
+        if is_online:
+            await interaction.followup.send(f"El servidor está online. Preparando para el backup...")
+
+            async with SimpleRCONClient(
+                config.rcon_host, config.rcon_port, config.rcon_password
+            ) as client:
+                # Poner el mundo en modo solo lectura
+                await client.execute("save-off")
+                await client.execute("save-all")
+
+                await asyncio.sleep(5)  # Esperar un momento para asegurar que se guarden los datos
+        else:
+            await interaction.followup.send(f"El servidor está offline. Iniciando el backup...")
+
+        # Realiza la compresion
+
+        await interaction.followup.send(f"Comprimiendo la carpeta del mundo `{level_name}`...")
+
+        final_zip_path= await asyncio.to_thread(perform_backup_zip, source_dir= server_path, backup_folder= backup_dir, world_name= level_name)
+
+
+        file_size_mb= final_zip_path.stat().st_size / (1024 * 1024)
+
+        if is_online:
+            async with SimpleRCONClient(
+                config.rcon_host, config.rcon_port, config.rcon_password
+            ) as client:
+                # Volver a poner el mundo en modo escritura
+                await client.execute("save-on")
+                await client.execute(f"say Backup completado: {final_zip_path.name}.")
+        
+        await interaction.followup.send(
+            f"Backup completado: `{final_zip_path}` ({file_size_mb:.2f} MB)."
+            f"Ruta: `{final_zip_path.resolve()}`."
+        )
+    except Exception as e:
+        if is_online:
+            try:
+                async with SimpleRCONClient(
+                    config.rcon_host, config.rcon_port, config.rcon_password
+                ) as client:
+                    await client.execute("save-on")
+            except Exception:
+                # TODO: Si esto falla, tenemos grandes problemas.
+                # Significa que el mundo se queda en modo solo lectura.
+                pass
+        await interaction.followup.send(
+            f"**Error inesperado al crear el backup:**\n```\n{e}\n```"
+        )
